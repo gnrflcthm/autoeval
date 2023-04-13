@@ -2,10 +2,8 @@ from time import sleep
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.alert import Alert
-from selenium.webdriver.chrome.options import Options
 from random import randrange
 from credentials import USER, PASS
 
