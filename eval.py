@@ -31,7 +31,7 @@ def generate_answer(strategy, choices_count):
     elif strategy == RANDOM_LOW:
         return randrange(choices_count - 2, choices_count - 1)
     elif strategy == ONES:
-        return choices_count - 1
+        return choices_count - 2
     else:
         return 0
 
