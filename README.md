@@ -1,4 +1,5 @@
 # Python Auto Evaluation Script for MyUSTE Prof Evaluation
+Easily evaulate your profs with a press of a button. Hassle free.
 
 # Requirements
 1. You need to have `python` and `pip` installed in your system (atleast v3.8.x)
