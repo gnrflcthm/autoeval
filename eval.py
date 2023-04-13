@@ -21,7 +21,7 @@ service = Service("chromedriver.exe")
 
 driver = Chrome(service=service)
 
-def generate_answer(strategy, choices_count):
+def generate_answer(strategy: int, choices_count: int) -> int:
     if strategy == RANDOM:
         return randrange(0, choices_count)
     elif strategy == RANDOM_HIGH:
@@ -33,7 +33,7 @@ def generate_answer(strategy, choices_count):
     else:
         return 0
 
-def eval(strategy):
+def eval(strategy: int):
     form = driver.find_element(By.TAG_NAME, "form")
     questions = [x.find_element(By.TAG_NAME, "ul") for x in driver.find_elements(By.CLASS_NAME, "tdratingscale")]
     action = ActionChains(driver)
@@ -46,41 +46,43 @@ def eval(strategy):
     Alert(driver).accept()
 
 #main
-try:
+if __name__ == "__main__":
+    try:
+        driver.get(MYUSTE)
+        driver.maximize_window()
 
-    driver.get(MYUSTE)
-    driver.maximize_window()
+        # Login
+        user = driver.find_element(By.ID, 'txtUsername')
+        password = driver.find_element(By.ID, 'txtPassword')
+        form = driver.find_element(By.ID, 'form1')
 
-    # Login
-    user = driver.find_element(By.ID, 'txtUsername')
-    password = driver.find_element(By.ID, 'txtPassword')
-    form = driver.find_element(By.ID, 'form1')
+        user.send_keys(USER)
+        password.send_keys(PASS)
 
-    user.send_keys(USER)
-    password.send_keys(PASS)
+        form.submit()
 
-    form.submit()
+        # Exit Program If Invalid Credentials
+        if driver.current_url != "https://myuste.ust.edu.ph/student/studentcontrol":
+            raise Exception("Invalid Login Credentials.")
 
-    # Exit Program If Invalid Credentials
-    if driver.current_url != "https://myuste.ust.edu.ph/student/studentcontrol":
-        raise Exception("Invalid Login Credentials.")
+        driver.get(MYUSTE_EVAL)
 
-    driver.get(MYUSTE_EVAL)
+        prof_count = len(driver.find_elements(By.CLASS_NAME, "evaluatee"))
 
-    prof_count = len(driver.find_elements(By.CLASS_NAME, "evaluatee"))
+        for x in range(prof_count):
+            profs = driver.find_elements(By.CLASS_NAME, "evaluatee")
+            for prof in profs:
+                # To check if already evaluated
+                try:
+                    link = prof.find_element(By.TAG_NAME, "a")
+                    link.click()
+                    eval(RANDOM_HIGH)   # You can Update Strategy Accordingly
+                except:
+                    continue
+        sleep(1)
 
-    for x in range(prof_count):
-        profs = driver.find_elements(By.CLASS_NAME, "evaluatee")
-        for prof in profs:
-            # To check if already evaluated
-            try:
-                link = prof.find_element(By.TAG_NAME, "a")
-                link.click()
-                eval(RANDOM_HIGH)   # You can Update Strategy Accordingly
-            except:
-                continue
-    sleep(1)
-except Exception:
-    print(Exception.with_traceback())
-finally:
-    driver.close()
+    except Exception:
+        print(Exception.with_traceback())
+
+    finally:
+        driver.close()
