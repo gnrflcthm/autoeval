@@ -3,7 +3,8 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.select import Select
 from random import randrange
 from credentials import USER, PASS
 
@@ -14,47 +15,58 @@ RANDOM_LOW = 3
 ONES = 4
 PERFECT = 5
 
-MYUSTE = "https://myuste.ust.edu.ph/student"
-MYUSTE_EVAL = "https://myuste.ust.edu.ph/student/evaluateelist?id=collegefaculty"
+SSS = "https://esurvey.ust.edu.ph/userlogin"
 
 service = Service("chromedriver.exe")
 
 driver = Chrome(service=service)
 
-def generate_answer(strategy: int, choices_count: int) -> int:
+def generate_answer(strategy: int, choices_count: int, ignore_not_applicable = True) -> int:
+    if ignore_not_applicable:
+        choices_count -= 1
+
     if strategy == RANDOM:
         return randrange(0, choices_count)
     elif strategy == RANDOM_HIGH:
         return randrange(0, 2)
     elif strategy == RANDOM_LOW:
-        return randrange(choices_count - 2, choices_count - 1)
+        return randrange(choices_count - 2, choices_count)
     elif strategy == ONES:
         return choices_count - 2
     else:
         return 0
 
 def eval(strategy: int):
-    form = driver.find_element(By.TAG_NAME, "form")
-    questions = [x.find_element(By.TAG_NAME, "ul") for x in driver.find_elements(By.CLASS_NAME, "tdratingscale")]
+    submit_btn = driver.find_element(By.XPATH, '//*[@id="tblSurveyQuestionId"]/p/input[2]')
+    sections = driver.find_elements(By.CLASS_NAME, "survey-details")
     action = ActionChains(driver)
-    for question in questions:
-        choices = question.find_elements(By.TAG_NAME, "li")
-        answer = generate_answer(strategy, len(choices))
-        action.click(choices[answer].find_element(By.CLASS_NAME, "ratingtext"))
+    for section in sections:
+        table: WebElement = section.find_element(By.TAG_NAME, "table")
+        questions = table.find_element(By.TAG_NAME, "tbody").find_elements(By.CLASS_NAME, "radio-col")
+        for question in questions:
+            choices = question.find_elements(By.TAG_NAME, "input")
+            answer = generate_answer(strategy, len(choices))
+            print(answer)
+            action.click(choices[answer])
+        try:
+            select = Select(table.find_element(By.TAG_NAME, "select"))
+            answer = generate_answer(strategy, len(select.options) - 1)
+            select.select_by_index(answer + 1)
+        except:
+            continue
     action.perform()
-    form.submit()
-    Alert(driver).accept()
+    submit_btn.click()
 
 #main
 if __name__ == "__main__":
     try:
-        driver.get(MYUSTE)
+        driver.get(SSS)
         driver.maximize_window()
 
         # Login
-        user = driver.find_element(By.ID, 'txtUsername')
-        password = driver.find_element(By.ID, 'txtPassword')
-        form = driver.find_element(By.ID, 'form1')
+        user = driver.find_element(By.XPATH, '/html/body/section/div/div/div[2]/div/form/div[1]/input')
+        password = driver.find_element(By.XPATH, '/html/body/section/div/div/div[2]/div/form/div[2]/input')
+        form = driver.find_element(By.XPATH, '/html/body/section/div/div/div[2]/div/form')
 
         user.send_keys(USER)
         password.send_keys(PASS)
@@ -62,23 +74,17 @@ if __name__ == "__main__":
         form.submit()
 
         # Exit Program If Invalid Credentials
-        if driver.current_url != "https://myuste.ust.edu.ph/student/studentcontrol":
+        print(driver.current_url)
+        if driver.current_url != "https://esurvey.ust.edu.ph/surveylist":
             raise Exception("Invalid Login Credentials.")
 
-        driver.get(MYUSTE_EVAL)
+        # Open SSS Evalutaion
+        sss_form_button = driver.find_element(By.XPATH, "/html/body/section/div/div/div/div[2]/div/div/table/tbody/tr[1]/td[2]/form/button")
+        sss_form_button.click()
 
-        prof_count = len(driver.find_elements(By.CLASS_NAME, "evaluatee"))
+        # Evaluate
+        eval(RANDOM_HIGH)
 
-        for x in range(prof_count):
-            profs = driver.find_elements(By.CLASS_NAME, "evaluatee")
-            for prof in profs:
-                # To check if already evaluated
-                try:
-                    link = prof.find_element(By.TAG_NAME, "a")
-                    link.click()
-                    eval(RANDOM_HIGH)   # You can Update Strategy Accordingly
-                except:
-                    continue
         sleep(1)
 
     except Exception:
