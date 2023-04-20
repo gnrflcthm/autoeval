@@ -46,7 +46,6 @@ def eval(strategy: int):
         for question in questions:
             choices = question.find_elements(By.TAG_NAME, "input")
             answer = generate_answer(strategy, len(choices))
-            print(answer)
             action.click(choices[answer])
         try:
             select = Select(table.find_element(By.TAG_NAME, "select"))
@@ -74,7 +73,6 @@ if __name__ == "__main__":
         form.submit()
 
         # Exit Program If Invalid Credentials
-        print(driver.current_url)
         if driver.current_url != "https://esurvey.ust.edu.ph/surveylist":
             raise Exception("Invalid Login Credentials.")
 
